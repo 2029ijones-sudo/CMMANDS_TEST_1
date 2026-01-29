@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎨 VsX: Visual FX Playground</title>
+    
+    <!-- Load CMMANDS Runtime -->
+    <script src="runtime.js" data-root="./" data-auto-init="true"></script>
+    
+    <style>
+        :root {
+            --vsx-primary: #00ff88;
+            --vsx-secondary: #0088ff;
+            --vsx-bg-dark: #0a0a1a;
+            --vsx-bg-medium: #1a1a2e;
+            --vsx-bg-light: #2a2a3e;
+            --vsx-text: #ffffff;
+            --vsx-text-dim: #aaaaaa;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', 'JetBrains Mono', monospace;
+            background: var(--vsx-bg-dark);
+            color: var(--vsx-text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .vsx-header {
+            background: linear-gradient(135deg, var(--vsx-bg-medium), #000);
+            padding: 20px 40px;
+            border-bottom: 2px solid var(--vsx-primary);
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.2);
+        }
+        
+        .vsx-title {
+            font-size: 2.5em;
+            font-weight: 800;
+            background: linear-gradient(90deg, var(--vsx-primary), var(--vsx-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+        }
+        
+        .vsx-subtitle {
+            color: var(--vsx-text-dim);
+            margin-top: 5px;
+            font-size: 1.1em;
+        }
+        
+        .vsx-main {
+            display: grid;
+            grid-template-columns: 300px 1fr 300px;
+            gap: 20px;
+            padding: 20px;
+            height: calc(100vh - 120px);
+        }
+        
+        .vsx-sidebar {
+            background: var(--vsx-bg-medium);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(0, 255, 136, 0.1);
+            overflow-y: auto;
+        }
+        
+        .vsx-canvas-container {
+            background: #000;
+            border-radius: 12px;
+            border: 2px solid var(--vsx-primary);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        #vsx-canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .vsx-controls {
+            background: var(--vsx-bg-medium);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(0, 136, 255, 0.1);
+            overflow-y: auto;
+        }
+        
+        .vsx-panel-title {
+            color: var(--vsx-primary);
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(0, 255, 136, 0.3);
+        }
+        
+        .vsx-command-btn {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 136, 255, 0.1));
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            color: var(--vsx-text);
+            padding: 12px 15px;
+            margin: 8px 0;
+            width: 100%;
+            text-align: left;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+        
+        .vsx-command-btn:hover {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.2), rgba(0, 136, 255, 0.2));
+            border-color: var(--vsx-primary);
+            transform: translateX(5px);
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+        }
+        
+        .vsx-command-desc {
+            color: var(--vsx-text-dim);
+            font-size: 0.85em;
+            margin-top: 3px;
+            display: block;
+        }
+        
+        .vsx-slider {
+            width: 100%;
+            margin: 15px 0;
+            -webkit-appearance: none;
+            height: 6px;
+            background: rgba(0, 255, 136, 0.1);
+            border-radius: 3px;
+            outline: none;
+        }
+        
+        .vsx-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--vsx-primary);
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.8);
+        }
+        
+        .vsx-status {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px 15px;
+            border-radius: 8px;
+            border-left: 4px solid var(--vsx-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+        }
+        
+        .vsx-glow {
+            animation: glow 2s infinite alternate;
+        }
+        
+        @keyframes glow {
+            from { box-shadow: 0 0 10px rgba(0, 255, 136, 0.5); }
+            to { box-shadow: 0 0 20px rgba(0, 255, 136, 0.8); }
+        }
+        
+        .vsx-badge {
+            display: inline-block;
+            background: rgba(0, 255, 136, 0.2);
+            color: var(--vsx-primary);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <header class="vsx-header">
+        <h1 class="vsx-title">VsX: Visual FX Playground</h1>
+        <div class="vsx-subtitle">Real-time FX experimentation powered by CMMANDS Runtime</div>
+    </header>
+    
+    <main class="vsx-main">
+        <!-- Left: Files & Commands -->
+        <aside class="vsx-sidebar">
+            <h3 class="vsx-panel-title">📁 Project Files</h3>
+            <div id="vsx-files-list"></div>
+            
+            <h3 class="vsx-panel-title">🚀 Available Commands</h3>
+            <div id="vsx-commands-list"></div>
+        </aside>
+        
+        <!-- Center: Canvas -->
+        <section class="vsx-canvas-container vsx-glow">
+            <canvas id="vsx-canvas"></canvas>
+            <div id="vsx-fps-counter"></div>
+        </section>
+        
+        <!-- Right: Controls -->
+        <aside class="vsx-controls">
+            <h3 class="vsx-panel-title">🎛️ FX Controls</h3>
+            <div id="vsx-controls-container"></div>
+            
+            <h3 class="vsx-panel-title">📊 Performance</h3>
+            <div id="vsx-performance"></div>
+        </aside>
+    </main>
+    
+    <div class="vsx-status" id="vsx-status">
+        🟢 CMMANDS Runtime: Ready | Press F12 for console commands
+    </div>
+
+    <!-- Your FX Scripts -->
+    <script src="scripts/particle-fx.js"></script>
+    <script src="scripts/shader-fx.js"></script>
+    <script src="scripts/audio-fx.js"></script>
+    
+    <!-- Main VsX Script -->
+    <script>
+        // Initialize VsX FX Engine
+        const canvas = document.getElementById('vsx-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
+        
+        // Wait for CMMANDS to initialize
+        setTimeout(() => {
+            if (window.CMMANDS && window.CMMANDS.getInstance()) {
+                const cmmands = window.CMMANDS.getInstance();
+                
+                // Create custom VsX commands
+                cmmands.registerCommand('vsx-clear-canvas', () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    updateStatus('🎨 Canvas cleared');
+                }, 'Clear the FX canvas');
+                
+                cmmands.registerCommand('vsx-run-particle-demo', runParticleDemo, 'Run particle system demo');
+                cmmands.registerCommand('vsx-run-shader-demo', runShaderDemo, 'Run WebGL shader demo');
+                cmmands.registerCommand('vsx-save-fx-snapshot', saveFXSnapshot, 'Save current FX as image');
+                cmmands.registerCommand('vsx-toggle-fullscreen', toggleFullscreen, 'Toggle fullscreen mode');
+                cmmands.registerCommand('vsx-generate-new-fx', generateRandomFX, 'Generate random visual effect');
+                
+                // Update UI with commands
+                updateCommandsUI();
+                
+                // Start animation loop
+                requestAnimationFrame(animate);
+            }
+        }, 1000);
+        
+        // VsX Core Functions
+        function updateStatus(message) {
+            const statusEl = document.getElementById('vsx-status');
+            statusEl.innerHTML = `🎨 ${message}`;
+            statusEl.style.borderLeftColor = '#00ff88';
+            setTimeout(() => {
+                statusEl.innerHTML = '🟢 CMMANDS Runtime: Ready | Press F12 for console commands';
+                statusEl.style.borderLeftColor = '#00ff88';
+            }, 3000);
+        }
+        
+        function updateCommandsUI() {
+            const cmmands = window.CMMANDS.getInstance();
+            const commands = cmmands.getCommands();
+            const container = document.getElementById('vsx-commands-list');
+            
+            container.innerHTML = '';
+            commands.forEach(cmd => {
+                if (cmd.name.startsWith('vsx-') || cmd.name.includes('fx') || cmd.name.includes('demo')) {
+                    const btn = document.createElement('button');
+                    btn.className = 'vsx-command-btn';
+                    btn.innerHTML = `
+                        <strong>${cmd.name}</strong>
+                        <span class="vsx-command-desc">${cmd.description}</span>
+                    `;
+                    btn.onclick = () => {
+                        cmmands.executeCommand(cmd.name);
+                        btn.style.background = 'linear-gradient(135deg, rgba(0,255,136,0.3), rgba(0,136,255,0.3))';
+                        setTimeout(() => {
+                            btn.style.background = 'linear-gradient(135deg, rgba(0,255,136,0.1), rgba(0,136,255,0.1))';
+                        }, 500);
+                    };
+                    container.appendChild(btn);
+                }
+            });
+            
+            // Also show tracked files
+            const files = cmmands.getTrackedFiles();
+            const filesContainer = document.getElementById('vsx-files-list');
+            filesContainer.innerHTML = '';
+            files.forEach(file => {
+                const div = document.createElement('div');
+                div.className = 'vsx-command-btn';
+                div.innerHTML = `
+                    <strong>${file.path.split('/').pop()}</strong>
+                    <span class="vsx-command-desc">${file.language} | ${file.size} bytes</span>
+                `;
+                div.onclick = () => {
+                    cmmands.executeCommand(`open-${file.path.split('/').pop().replace(/[^a-z0-9]/gi, '-')}`);
+                };
+                filesContainer.appendChild(div);
+            });
+        }
+        
+        function runParticleDemo() {
+            updateStatus('Running particle demo...');
+            // This would call your particle-fx.js functions
+            if (typeof createParticleStorm === 'function') {
+                createParticleStorm();
+            }
+        }
+        
+        function saveFXSnapshot() {
+            const link = document.createElement('a');
+            link.download = `vsx-snapshot-${Date.now()}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+            updateStatus('📸 FX snapshot saved!');
+        }
+        
+        function animate(timestamp) {
+            // FX animation loop
+            // Your visual effects go here
+            requestAnimationFrame(animate);
+        }
+        
+        // Expose VsX globally for console access
+        window.VsX = {
+            canvas,
+            ctx,
+            runDemo: runParticleDemo,
+            clear: () => ctx.clearRect(0, 0, canvas.width, canvas.height),
+            save: saveFXSnapshot,
+            commands: () => window.CMMANDS.getInstance().getCommands()
+        };
+        
+        console.log('%c🎨 VsX FX Engine Ready!', 'color: #00ff88; font-size: 16px; font-weight: bold;');
+        console.log('%cType VsX.commands() to see available commands', 'color: #0088ff;');
+        console.log('%cOr use CMMANDS.executeCommand("command-name")', 'color: #0088ff;');
+    </script>
+</body>
+</html>
