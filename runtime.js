@@ -1543,19 +1543,32 @@ if (typeof window !== 'undefined') {
     }
 }
 
+// Export the instance for immediate use (Universal)
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { 
         CommandsRuntime, 
         initializeCMMANDS,
         getInstance: () => cmmandsInstance
     };
-    console.log('📦 CMMANDS loaded for Node.js/CommonJS');
 }
-
 if (typeof exports !== 'undefined') {
     exports.CommandsRuntime = CommandsRuntime;
     exports.initializeCMMANDS = initializeCMMANDS;
     exports.getInstance = () => cmmandsInstance;
+}
+if (typeof window !== 'undefined') {
+    window.CMMANDS = { 
+        CommandsRuntime, 
+        initializeCMMANDS,
+        getInstance: () => cmmandsInstance
+    };
+}
+if (typeof global !== 'undefined') {
+    global.CMMANDS = { 
+        CommandsRuntime, 
+        initializeCMMANDS,
+        getInstance: () => cmmandsInstance
+    };
 }
 
 // Auto-initialize if loaded via script tag
