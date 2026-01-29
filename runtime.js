@@ -1596,5 +1596,12 @@ console.log('   cmmands.getCommands(); // See all commands');
 console.log('   cmmands.getTrackedFiles(); // See tracked files\n');
 
 // Export the instance for immediate use
-export { CommandsRuntime, initializeCMMANDS };
-export default { CommandsRuntime, initializeCMMANDS, getInstance: () => cmmandsInstance };
+try {
+    // ES6 Module exports - only works when loaded as ES6 module
+    export { CommandsRuntime, initializeCMMANDS };
+    export default { CommandsRuntime, initializeCMMANDS, getInstance: () => cmmandsInstance };
+} catch (e) {
+    // Not in ES6 module environment - that's okay!
+    // The universal exports above already made CMMANDS available globally
+    console.log('📦 CMMANDS loaded in non-module environment (regular script tag)');
+}
