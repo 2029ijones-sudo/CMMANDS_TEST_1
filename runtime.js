@@ -1716,129 +1716,196 @@ ${JSON.stringify(executionResult.result, null, 2)}
         document.body.appendChild(toggleBtn);
     }
     
-    // ================ PUBLIC API ================
-    
-    async executeCommand(commandName, args = {}) {
-        console.log(`🚀 Executing: ${commandName}`);
-        
-        const command = this.commandRegistry.get(commandName);
-        
-        if (!command) {
-            // Try fuzzy matching
-            const suggestions = this._findCommandSuggestions(commandName);
-            console.log(`❌ Command not found: ${commandName}`);
-            
-            if (suggestions.length > 0) {
-                console.log(`💡 Did you mean:`);
-                suggestions.forEach(suggestion => {
-                    console.log(`   ${suggestion.icon} ${suggestion.name} - ${suggestion.description}`);
-                });
+   // ================ PUBLIC API ================
+
+// ADD THIS METHOD - Your HTML demo calls cmmands.registerCommand()
+registerCommand(name, action, description = 'No description', category = 'custom', icon = '📝', tags = []) {
+    const command = {
+        name,
+        action,
+        description,
+        category,
+        icon,
+        tags,
+        execute: async (args = {}) => {
+            try {
+                console.log(`🚀 Executing custom command: ${name}`);
+                const result = await action(args);
+                console.log(`✅ ${name} completed`);
+                return result;
+            } catch (error) {
+                console.error(`❌ ${name} failed:`, error);
+                throw error;
             }
-            
-            throw new Error(`Command not found: ${commandName}`);
         }
-        
-        // Enhanced security check
-        const securityCheck = this.security.validateCommand(commandName, args);
-        if (!securityCheck.allowed) {
-            throw new Error(`Command blocked: ${securityCheck.reason}`);
-        }
-        
-        try {
-            console.log(`📝 ${command.description}`);
-            const startTime = Date.now();
-            const result = await command.action(args);
-            const elapsed = Date.now() - startTime;
-            
-            console.log(`✅ Command completed in ${elapsed}ms`);
-            return result;
-        } catch (error) {
-            console.error(`❌ Command failed:`, error);
-            throw error;
-        }
-    }
+    };
     
-    _findCommandSuggestions(query) {
-        const commands = this.getCommands();
-        const queryLower = query.toLowerCase();
-        
-        // Multiple matching strategies
-        const suggestions = commands.filter(cmd => {
-            const nameLower = cmd.name.toLowerCase();
-            const descLower = cmd.description.toLowerCase();
-            
-            // Exact match
-            if (nameLower.includes(queryLower) || descLower.includes(queryLower)) {
-                return true;
-            }
-            
-            // Fuzzy match
-            const words = queryLower.split(/:|-|_/);
-            return words.every(word => nameLower.includes(word) || descLower.includes(word));
+    this.commandRegistry.set(name, command);
+    console.log(`✅ Registered command: ${name} - ${description}`);
+    return name;
+}
+
+// Your HTML demo calls cmmands.getTrackedFiles()
+getTrackedFiles() {
+    const files = [];
+    this.trackedFiles.forEach((info, path) => {
+        files.push({
+            path,
+            name: info.name || path.split('/').pop(),
+            language: info.language || 'unknown',
+            commands: info.commands?.length || 0,
+            functions: info.analysis?.functions?.length || 0,
+            securityIssues: info.securityIssues?.length || 0
         });
+    });
+    return files;
+}
+
+// Your HTML demo calls cmmands.startUniversalTracking()
+async startUniversalTracking(rootPath = '.') {
+    console.log(`🌐 Starting universal file tracking...`);
+    try {
+        await this.startTracking(rootPath);
+        return true;
+    } catch (error) {
+        console.error('Tracking failed:', error);
+        throw error;
+    }
+}
+
+// ADD THESE SIMPLE METHODS FOR THE DEMO:
+getPlatform() {
+    return this.platform.name;
+}
+
+getNodeSupport() {
+    return this.platform.name === 'node';
+}
+
+getBrowserSupport() {
+    return this.platform.name === 'browser' || this.platform.name === 'mobile';
+}
+
+async executeCommand(commandName, args = {}) {
+    console.log(`🚀 Executing: ${commandName}`);
+    
+    const command = this.commandRegistry.get(commandName);
+    
+    if (!command) {
+        // Try fuzzy matching
+        const suggestions = this._findCommandSuggestions(commandName);
+        console.log(`❌ Command not found: ${commandName}`);
         
-        return suggestions.slice(0, 5);
+        if (suggestions.length > 0) {
+            console.log(`💡 Did you mean:`);
+            suggestions.forEach(suggestion => {
+                console.log(`   ${suggestion.icon} ${suggestion.name} - ${suggestion.description}`);
+            });
+        }
+        
+        throw new Error(`Command not found: ${commandName}`);
     }
     
-    getCommands(filter = {}) {
-        const commands = Array.from(this.commandRegistry.entries()).map(([name, cmd]) => ({
-            name,
-            description: cmd.description,
-            category: cmd.category,
-            icon: cmd.icon,
-            tags: cmd.tags || [],
-            shortcut: cmd.shortcut
-        }));
-        
-        // Apply filters
-        let filtered = commands;
-        if (filter.category) {
-            filtered = filtered.filter(c => c.category === filter.category);
-        }
-        if (filter.tag) {
-            filtered = filtered.filter(c => c.tags.includes(filter.tag));
-        }
-        if (filter.search) {
-            const searchLower = filter.search.toLowerCase();
-            filtered = filtered.filter(c => 
-                c.name.toLowerCase().includes(searchLower) || 
-                c.description.toLowerCase().includes(searchLower)
-            );
-        }
-        
-        return filtered;
+    // Enhanced security check
+    const securityCheck = this.security.validateCommand(commandName, args);
+    if (!securityCheck.allowed) {
+        throw new Error(`Command blocked: ${securityCheck.reason}`);
     }
     
-    getProjectStats() {
-        const stats = {
-            totalFiles: this.trackedFiles.size,
-            totalCommands: this.commandRegistry.size,
-            languages: {},
-            securityIssues: 0,
-            codeSmells: 0,
-            dependencies: this.dependencyGraph.size
-        };
+    try {
+        console.log(`📝 ${command.description}`);
+        const startTime = Date.now();
+        const result = await command.action(args);
+        const elapsed = Date.now() - startTime;
         
-        for (const data of this.trackedFiles.values()) {
-            stats.languages[data.language] = (stats.languages[data.language] || 0) + 1;
-            stats.securityIssues += data.securityIssues.length || 0;
-            stats.codeSmells += data.analysis.codeSmells?.length || 0;
+        console.log(`✅ Command completed in ${elapsed}ms`);
+        return result;
+    } catch (error) {
+        console.error(`❌ Command failed:`, error);
+        throw error;
+    }
+}
+
+_findCommandSuggestions(query) {
+    const commands = this.getCommands();
+    const queryLower = query.toLowerCase();
+    
+    // Multiple matching strategies
+    const suggestions = commands.filter(cmd => {
+        const nameLower = cmd.name.toLowerCase();
+        const descLower = cmd.description.toLowerCase();
+        
+        // Exact match
+        if (nameLower.includes(queryLower) || descLower.includes(queryLower)) {
+            return true;
         }
         
-        return stats;
+        // Fuzzy match
+        const words = queryLower.split(/:|-|_/);
+        return words.every(word => nameLower.includes(word) || descLower.includes(word));
+    });
+    
+    return suggestions.slice(0, 5);
+}
+
+getCommands(filter = {}) {
+    const commands = Array.from(this.commandRegistry.entries()).map(([name, cmd]) => ({
+        name,
+        description: cmd.description,
+        category: cmd.category,
+        icon: cmd.icon,
+        tags: cmd.tags || [],
+        shortcut: cmd.shortcut
+    }));
+    
+    // Apply filters
+    let filtered = commands;
+    if (filter.category) {
+        filtered = filtered.filter(c => c.category === filter.category);
+    }
+    if (filter.tag) {
+        filtered = filtered.filter(c => c.tags.includes(filter.tag));
+    }
+    if (filter.search) {
+        const searchLower = filter.search.toLowerCase();
+        filtered = filtered.filter(c => 
+            c.name.toLowerCase().includes(searchLower) || 
+            c.description.toLowerCase().includes(searchLower)
+        );
     }
     
-    async refresh() {
-        console.log('🔄 Refreshing CMMANDS analysis...');
-        this.cache.clear();
-        this.commandRegistry.clear();
-        this.trackedFiles.clear();
-        this.dependencyGraph.clear();
-        this.astCache.clear();
-        
-        await this.startTracking(this.projectRoot);
-        return this.getProjectStats();
+    return filtered;
+}
+
+getProjectStats() {
+    const stats = {
+        totalFiles: this.trackedFiles.size,
+        totalCommands: this.commandRegistry.size,
+        languages: {},
+        securityIssues: 0,
+        codeSmells: 0,
+        dependencies: this.dependencyGraph.size
+    };
+    
+    for (const data of this.trackedFiles.values()) {
+        stats.languages[data.language] = (stats.languages[data.language] || 0) + 1;
+        stats.securityIssues += data.securityIssues.length || 0;
+        stats.codeSmells += data.analysis.codeSmells?.length || 0;
     }
+    
+    return stats;
+}
+
+async refresh() {
+    console.log('🔄 Refreshing CMMANDS analysis...');
+    this.cache.clear();
+    this.commandRegistry.clear();
+    this.trackedFiles.clear();
+    this.dependencyGraph.clear();
+    this.astCache.clear();
+    
+    await this.startTracking(this.projectRoot);
+    return this.getProjectStats();
 }
 
 // ================ UNIVERSAL EXPORT ================
